@@ -10,6 +10,8 @@ namespace TeamsPricing
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("Not implemented");
+            Console.ReadLine();
         }
     }
 }
