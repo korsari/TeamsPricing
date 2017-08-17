@@ -52,9 +52,10 @@ namespace TeamsPricing
                     {
                         TeamFootball team1 = group.Value[i];
                         TeamFootball team2 = group.Value[j];
+                        TeamFootball winner;
                         if (team1.Name != team2.Name)
                         {
-                            TeamFootball winner = Goals.PlayMatch(team1, team2, true);
+                            winner = Goals.PlayMatch(team1, team2, true);
                         }
                     }
                 }
@@ -111,8 +112,8 @@ namespace TeamsPricing
                 string group2;
                 if (match.Item2 != "table")
                 {
-                    rank2 = (int)Char.GetNumericValue(match.Item1[0]);
-                    group2 = match.Item1[1].ToString();
+                    rank2 = (int)Char.GetNumericValue(match.Item2[0]);
+                    group2 = match.Item2[1].ToString();
                 }
                 else
                 {

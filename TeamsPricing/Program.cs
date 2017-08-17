@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MathNet.Numerics.Distributions;
+using MathNet.Numerics.Statistics;
 using FileHelpers;
 
 namespace TeamsPricing
@@ -16,33 +17,34 @@ namespace TeamsPricing
             Dictionary<string, Dictionary<string, string>> selectionRulesTable = GetRulesTable("D:\\C#\\FootballBets\\RulesTable.csv");
             Dictionary <string, TeamFootball[]> groups = GetGroups("D:\\C#\\FootballBets\\Teams.csv");
             int[] prices = {1000,500,250,250,125,125,125,125,50,50,50,50,50,50,50,50,25,25,25,25,25,25,25,25 };
-            Dictionary<string, float> MCFinalPrices = new Dictionary<string, float>();
-            int nIterations = 100000;
+            Dictionary<string, float> mcFinalPrices = new Dictionary<string, float>();
+            int nIterations = 1000000;
+            string goaslMethod = "QuickWeighted";
 
-            foreach( KeyValuePair<string, TeamFootball[]> group in groups)
+            foreach ( KeyValuePair<string, TeamFootball[]> group in groups)
             {
                 foreach (TeamFootball team in group.Value)
-                    MCFinalPrices.Add(team.Name, 0);
+                    mcFinalPrices.Add(team.Name, 0);
             }
 
-            Competition Euro2016 = new Competition(groups, selectionRules, selectionRulesTable);
+            Competition euro2016 = new Competition(groups, selectionRules, selectionRulesTable, goaslMethod);
             TeamFootball[] result;
             for (int iteration = 0; iteration < nIterations; iteration++)
             {
-                result = Euro2016.PlayCompetition();
+                result = euro2016.PlayCompetition();
                 for (int j = 0; j < result.Length; j++)
                 {
-                    MCFinalPrices[result[j].Name] += prices[j];
+                    mcFinalPrices[result[j].Name] += prices[j];
                 }
                 if (iteration % (nIterations/10) == 0)
                     Console.WriteLine(iteration/(nIterations/100)+ "%");
-                Euro2016.Reset();
+                euro2016.Reset();
             }
 
-            foreach (KeyValuePair<string, float> team in MCFinalPrices.ToList())
-                MCFinalPrices[team.Key] /= nIterations;
+            foreach (KeyValuePair<string, float> team in mcFinalPrices.ToList())
+                mcFinalPrices[team.Key] /= nIterations;
 
-            List<KeyValuePair<string,float>> outputFinal = MCFinalPrices.ToList();
+            List<KeyValuePair<string,float>> outputFinal = mcFinalPrices.ToList();
             outputFinal.Sort(
                 delegate (KeyValuePair<string, float> team1, KeyValuePair<string, float> team2)
                 {
@@ -98,6 +100,33 @@ namespace TeamsPricing
                 result.Add(rules.key, tmp);
             }
             return result;
+        }
+
+        public static void ReworkTeamPoints(Dictionary<string, TeamFootball[]> groups, string method)
+        {
+            List<float> pointsList = new List<float>();
+            foreach (KeyValuePair<string,TeamFootball[]> group in groups)
+            {
+                foreach(TeamFootball team in group.Value)
+                {
+                    pointsList.Add(team.Points);
+                }
+            }
+            switch (method)
+            {
+                case "stupid":
+                    Tuple<double,double> meanVar = Statistics.MeanVariance(pointsList);
+                    foreach (KeyValuePair<string, TeamFootball[]> group in groups)
+                    {
+                        foreach (TeamFootball team in group.Value)
+                        {
+                            team.Points = (team.Points - (float)meanVar.Item1) / (float)meanVar.Item2;
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
