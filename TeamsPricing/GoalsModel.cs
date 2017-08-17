@@ -10,7 +10,7 @@ namespace TeamsPricing
     class GoalsModel
     {
         private Random Rand;
-        private string MethodToUse;
+        private MethodToUse Method;
 
         public GoalsModel()
         {
@@ -22,15 +22,15 @@ namespace TeamsPricing
             Rand = rand;
         }
 
-        public GoalsModel(string methodToUse)
+        public GoalsModel(MethodToUse method)
         {
-            MethodToUse = methodToUse;
+            Method = method;
             Rand = new Random();
         }
 
-        public GoalsModel(string methodToUse, Random rand)
+        public GoalsModel(MethodToUse method, Random rand)
         {
-            MethodToUse = methodToUse;
+            Method = method;
             Rand = rand;
         }
 
@@ -41,15 +41,15 @@ namespace TeamsPricing
             // TODO: -find a better drawing system
             //       -populate team1 and team2 with the goals
             int goals1, goals2;
-            switch (MethodToUse)
+            switch (Method)
             {
-                case "stupid":
+                case MethodToUse.stupid:
                     (goals1, goals2) = StupidMethod(team1.Points, team2.Points, allowDrawn);
                     break;
-                case "poisson":
+                case MethodToUse.poisson:
                     (goals1, goals2) = Poisson(team1.Points, team2.Points, allowDrawn);
                     break;
-                case "QuickWeighted":
+                case MethodToUse.quickWeighted:
                     (goals1, goals2) = QuickRandWeightedDrawn(team1.Points, team2.Points, allowDrawn);
                     break;
                 default:
@@ -58,28 +58,20 @@ namespace TeamsPricing
             }
             if (goals1 == goals2)
             {
-                team1.Drawn++;
-                team2.Drawn++;
+                team1.OneNada(goals1,goals2);
+                team2.OneNada(goals2,goals1);
                 return team1;
             }
             if (goals1 > goals2)
             {
-                team1.Won++;
-                team1.GoalFor += goals1;
-                team1.GoalAgainst += goals1;
-                team2.Lost++;
-                team2.GoalFor += goals2;
-                team2.GoalAgainst += goals2;
+                team1.OneUp(goals1, goals2);
+                team2.OneDown(goals2, goals1);
                 return team1;
             }
             else
             {
-                team2.Won++;
-                team2.GoalFor += goals2;
-                team2.GoalAgainst += goals2;
-                team1.Lost++;
-                team1.GoalFor += goals1;
-                team1.GoalAgainst += goals1;
+                team1.OneDown(goals1, goals2);
+                team2.OneUp(goals2, goals1);
                 return team2;
             }
             
@@ -131,5 +123,13 @@ namespace TeamsPricing
             }
             return (goals1, goals2);
         }
+    }
+
+    public enum MethodToUse
+    {
+        stupid,
+        poisson,
+        quickWeighted,
+        none
     }
 }

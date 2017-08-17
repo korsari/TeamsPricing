@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace TeamsPricing
 {
@@ -16,14 +15,14 @@ namespace TeamsPricing
         private GoalsModel Goals;
 
         public Competition(Dictionary<string, TeamFootball[]> groups, Tuple<string, string>[] selectionRules, 
-            Dictionary<string, Dictionary<string, string>> selectionRulesTable, string methodToUse="")
+            Dictionary<string, Dictionary<string, string>> selectionRulesTable, MethodToUse methodToUse=MethodToUse.none)
         {
             nTeams = 0;
             foreach (KeyValuePair<string, TeamFootball[]> group in groups)
             {
                 nTeams += group.Value.Length;
             }
-            MatchesKnockout = new Tuple<TeamFootball, TeamFootball>[15]; // TO CHANGE FOR OTHER COMPETITIONS
+            MatchesKnockout = new Tuple<TeamFootball, TeamFootball>[15];
             Groups = new Dictionary<string, TeamFootball[]>();
             Groups = groups;
             SelectionRules = selectionRules;
@@ -35,23 +34,23 @@ namespace TeamsPricing
         {
             TeamFootball[] finalRanking = new TeamFootball[nTeams];
             int k = 0;
-            foreach (KeyValuePair<string,TeamFootball[]> group in Groups)
+            foreach (TeamFootball[] group in Groups.Values)
             {
-                foreach (TeamFootball team in group.Value)
+                foreach (TeamFootball team in group)
                 {
                     finalRanking[k] = team;
                     k++;
                 }
             }
             //First we play all the groups games to rank teams in each group
-            foreach (KeyValuePair<string, TeamFootball[]> group in Groups)
+            foreach (TeamFootball[] group in Groups.Values)
             {
-                for (int i = 0; i < group.Value.Length-1; i++)
+                for (int i = 0; i < group.Length-1; i++)
                 {
-                    for (int j = i+1; j < group.Value.Length; j++)
+                    for (int j = i+1; j < group.Length; j++)
                     {
-                        TeamFootball team1 = group.Value[i];
-                        TeamFootball team2 = group.Value[j];
+                        TeamFootball team1 = group[i];
+                        TeamFootball team2 = group[j];
                         TeamFootball winner;
                         if (team1.Name != team2.Name)
                         {
@@ -63,12 +62,14 @@ namespace TeamsPricing
             populateMatches();
 
             // We now play the knockout phase
-            for (int i = 8; i >=1; i/=2)
+            for (int i = 8; i>0; i/=2)
             {
                 for (int j = 0; j < i; j+=2)
                 {
-                    TeamFootball winnerOne = Goals.PlayMatch(MatchesKnockout[i-1 + j].Item1, MatchesKnockout[i-1 + j].Item2, false);
-                    TeamFootball winnerTwo = Goals.PlayMatch(MatchesKnockout[i + j].Item1, MatchesKnockout[i + j].Item2, false);
+                    Tuple<TeamFootball, TeamFootball> match1 = MatchesKnockout[i - 1 + j];
+                    Tuple<TeamFootball, TeamFootball> match2 = MatchesKnockout[i + j];
+                    TeamFootball winnerOne = Goals.PlayMatch(match1.Item1, match1.Item2, false);
+                    TeamFootball winnerTwo = Goals.PlayMatch(match2.Item1, match2.Item2, false);
                     if (i>1)
                         MatchesKnockout[(i + j) / 2 - 1] = new Tuple<TeamFootball, TeamFootball>(winnerOne, winnerTwo);
 
@@ -106,7 +107,7 @@ namespace TeamsPricing
             i = 0;
             foreach (Tuple<string, string> match in SelectionRules)
             {
-                int rank1 = (int)Char.GetNumericValue(match.Item1[0]);
+                int rank1 = (int)char.GetNumericValue(match.Item1[0]);
                 string group1 = match.Item1[1].ToString();
                 int rank2;
                 string group2;
@@ -130,12 +131,11 @@ namespace TeamsPricing
 
         public void Reset()
         {
-            foreach (KeyValuePair<string, TeamFootball[]> group in Groups)
+            foreach (var team in Groups.SelectMany(x => x.Value))
             {
-                foreach (TeamFootball team in group.Value)
-                    team.Reset();
+                   team.Reset();
             }
-            MatchesKnockout = new Tuple<TeamFootball, TeamFootball>[15];
+            Array.Clear(MatchesKnockout,0,MatchesKnockout.Length);
         }
 
     }

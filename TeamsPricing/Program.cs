@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MathNet.Numerics.Distributions;
 using MathNet.Numerics.Statistics;
 using FileHelpers;
 
@@ -17,15 +14,10 @@ namespace TeamsPricing
             Dictionary<string, Dictionary<string, string>> selectionRulesTable = GetRulesTable("D:\\C#\\FootballBets\\RulesTable.csv");
             Dictionary <string, TeamFootball[]> groups = GetGroups("D:\\C#\\FootballBets\\Teams.csv");
             int[] prices = {1000,500,250,250,125,125,125,125,50,50,50,50,50,50,50,50,25,25,25,25,25,25,25,25 };
-            Dictionary<string, float> mcFinalPrices = new Dictionary<string, float>();
             int nIterations = 1000000;
-            string goaslMethod = "QuickWeighted";
+            MethodToUse goaslMethod = MethodToUse.quickWeighted;
 
-            foreach ( KeyValuePair<string, TeamFootball[]> group in groups)
-            {
-                foreach (TeamFootball team in group.Value)
-                    mcFinalPrices.Add(team.Name, 0);
-            }
+            Dictionary<string, float> mcFinalPrices = groups.SelectMany(x => x.Value).ToDictionary(x => x.Name, x => 0f);
 
             Competition euro2016 = new Competition(groups, selectionRules, selectionRulesTable, goaslMethod);
             TeamFootball[] result;
@@ -36,26 +28,19 @@ namespace TeamsPricing
                 {
                     mcFinalPrices[result[j].Name] += prices[j];
                 }
-                if (iteration % (nIterations/10) == 0)
-                    Console.WriteLine(iteration/(nIterations/100)+ "%");
+                if (iteration % (nIterations / 10) == 0)
+                {
+                    Console.WriteLine(iteration / (nIterations / 100) + "%");
+                }
                 euro2016.Reset();
             }
 
-            foreach (KeyValuePair<string, float> team in mcFinalPrices.ToList())
-                mcFinalPrices[team.Key] /= nIterations;
-
-            List<KeyValuePair<string,float>> outputFinal = mcFinalPrices.ToList();
-            outputFinal.Sort(
-                delegate (KeyValuePair<string, float> team1, KeyValuePair<string, float> team2)
-                {
-                    return team1.Value.CompareTo(team2.Value);
-                });
-            outputFinal.Reverse();
-            foreach (KeyValuePair<string, float> team in outputFinal)
-                Console.WriteLine("{0} = {1}$", team.Key, team.Value);
-                //Console.WriteLine(team.Value);
+            foreach (var team in mcFinalPrices.OrderByDescending(x => x.Value))
+            {
+                Console.WriteLine("{0} = {1}$", team.Key, team.Value/nIterations);
+                //Console.WriteLine(team.Value/nIterations);
+            }
             Console.ReadLine();
-
         }
 
         public static Tuple<string, string>[] GetRules(string filePath)
@@ -64,7 +49,7 @@ namespace TeamsPricing
             var records = engine.ReadFile(filePath);
             Tuple<string, string>[] result = new Tuple<string, string>[records.Length];
             for (int i = 0; i < records.Length; i++)
-                result[i] = new Tuple<string, string>(records[i].team1, records[i].team2);
+                result[i] = new Tuple<string, string>(records[i].Team1, records[i].Team2);
             return result;
         }
 
@@ -72,16 +57,20 @@ namespace TeamsPricing
         {
             var engine = new FileHelperEngine<Teams>();
             var records = engine.ReadFile(filePath);
-            Dictionary<string, List<TeamFootball>> resultList = new Dictionary<string, List<TeamFootball>>();
+            var resultList = new Dictionary<string, List<TeamFootball>>();
             foreach (Teams team in records)
             {
-                if ( !resultList.ContainsKey(team.group))
-                    resultList.Add(team.group, new List<TeamFootball>());
-                resultList[team.group].Add(new TeamFootball(team.name, team.points));                    
+                if (!resultList.ContainsKey(team.Group))
+                {
+                    resultList.Add(team.Group, new List<TeamFootball>());
+                }
+                resultList[team.Group].Add(new TeamFootball(team.Name, team.Points));
             }
-            Dictionary<string, TeamFootball[]> result= new Dictionary<string, TeamFootball[]>();
-            foreach (KeyValuePair<string, List<TeamFootball>> res in resultList)
+            var result= new Dictionary<string, TeamFootball[]>();
+            foreach (var res in resultList)
+            {
                 result.Add(res.Key, res.Value.ToArray());
+            }
             return result;
         }
 
@@ -89,39 +78,29 @@ namespace TeamsPricing
         {
             var engine = new FileHelperEngine<RulesTable>();
             var records = engine.ReadFile(filePath);
-            Dictionary<string, Dictionary<string, string>> result = new Dictionary<string, Dictionary<string, string>>();
-            foreach (RulesTable rules in records)
-            {
-                Dictionary<string, string> tmp = new Dictionary<string, string>();
-                tmp.Add("1A", rules.team1);
-                tmp.Add("1B", rules.team2);
-                tmp.Add("1C", rules.team3);
-                tmp.Add("1D", rules.team4);
-                result.Add(rules.key, tmp);
-            }
+            var result = records.ToDictionary(x => x.Key, x => new Dictionary<string, string> {
+                    { "1A", x.Team1 },
+                    { "1B", x.Team2 },
+                    { "1C", x.Team3 },
+                    { "1D", x.Team4 }
+                });
             return result;
         }
 
-        public static void ReworkTeamPoints(Dictionary<string, TeamFootball[]> groups, string method)
+        public static void ReworkTeamPoints(Dictionary<string, TeamFootball[]> groups, MethodToUse method)
         {
             List<float> pointsList = new List<float>();
-            foreach (KeyValuePair<string,TeamFootball[]> group in groups)
+            foreach (TeamFootball team in groups.SelectMany(x => x.Value))
             {
-                foreach(TeamFootball team in group.Value)
-                {
-                    pointsList.Add(team.Points);
-                }
+                pointsList.Add(team.Points);
             }
             switch (method)
             {
-                case "stupid":
-                    Tuple<double,double> meanVar = Statistics.MeanVariance(pointsList);
-                    foreach (KeyValuePair<string, TeamFootball[]> group in groups)
+                case MethodToUse.stupid:
+                    Tuple<double, double> meanVar = Statistics.MeanVariance(pointsList);
+                    foreach (TeamFootball team in groups.SelectMany(x => x.Value))
                     {
-                        foreach (TeamFootball team in group.Value)
-                        {
-                            team.Points = (team.Points - (float)meanVar.Item1) / (float)meanVar.Item2;
-                        }
+                        team.Points = (team.Points - (float)meanVar.Item1) / (float)meanVar.Item2;
                     }
                     break;
                 default:
@@ -131,28 +110,30 @@ namespace TeamsPricing
     }
 
     [DelimitedRecord(",")]
-    class Rules
+    public class Rules
     {
-        public string team1;
-        public string team2;
+        public string Team1;
+        public string Team2;
     }
 
     [DelimitedRecord(",")]
-    class RulesTable
+    public class RulesTable
     {
-        public string key;
-        public string team1;
-        public string team2;
-        public string team3;
-        public string team4;
+        public string Key;
+        public string Team1;
+        public string Team2;
+        public string Team3;
+        public string Team4;
     }
 
     [DelimitedRecord(",")]
-    class Teams
+    public class Teams
     {
-        public string group;
-        public string name;
-        public float points;
+        public string Group;
+        public string Name;
+        public float Points;
     }
+
+
     
 }
