@@ -1,7 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+<<<<<<< Updated upstream
+using MathNet.Numerics.Distributions;
 using MathNet.Numerics.Statistics;
+=======
+>>>>>>> Stashed changes
 using FileHelpers;
 
 namespace TeamsPricing
@@ -10,16 +16,40 @@ namespace TeamsPricing
     {
         static void Main(string[] args)
         {
+<<<<<<< Updated upstream
+            Tuple<string, string>[] selectionRules = GetRules("D:\\C#\\FootballBets\\Rules.csv");
+            Dictionary<string, Dictionary<string, string>> selectionRulesTable = GetRulesTable("D:\\C#\\FootballBets\\RulesTable.csv");
+            Dictionary <string, TeamFootball[]> groups = GetGroups("D:\\C#\\FootballBets\\Teams.csv");
+            int[] prices = {1000,500,250,250,125,125,125,125,50,50,50,50,50,50,50,50,25,25,25,25,25,25,25,25 };
+            Dictionary<string, float> mcFinalPrices = new Dictionary<string, float>();
+            int nIterations = 1000000;
+            string goaslMethod = "QuickWeighted";
+
+            foreach ( KeyValuePair<string, TeamFootball[]> group in groups)
+            {
+                foreach (TeamFootball team in group.Value)
+                    mcFinalPrices.Add(team.Name, 0);
+            }
+
+            Competition euro2016 = new Competition(groups, selectionRules, selectionRulesTable, goaslMethod);
+=======
             Tuple<string, string>[] selectionRules = GetRules(@"C:\Git\TeamsPricing\Rules.csv");
             Dictionary<string, Dictionary<string, string>> selectionRulesTable = GetRulesTable(@"C:\Git\TeamsPricing\RulesTable.csv");
             Dictionary<string, TeamFootball[]> groups = GetGroups(@"C:\Git\TeamsPricing\Teams.csv");
             int[] prices = { 1000, 500, 250, 250, 125, 125, 125, 125, 50, 50, 50, 50, 50, 50, 50, 50, 25, 25, 25, 25, 25, 25, 25, 25 };
-            int nIterations = 1000000;
-            string goaslMethod = "QuickWeighted";
+            Dictionary<string, float> mcFinalPrices = new Dictionary<string, float>();
+            int nIterations = 100000;
 
-            Dictionary<string, float> mcFinalPrices = groups.SelectMany(x => x.Value).ToDictionary(x => x.Name, x => 0f);
+            foreach (KeyValuePair<string, TeamFootball[]> group in groups)
+            {
+                foreach (TeamFootball team in group.Value)
+                {
+                    mcFinalPrices.Add(team.Name, 0);
+                }
+            }
 
-            Competition euro2016 = new Competition(groups, selectionRules, selectionRulesTable, goaslMethod);
+            Competition euro2016 = new Competition(groups, selectionRules, selectionRulesTable);
+>>>>>>> Stashed changes
             TeamFootball[] result;
             for (int iteration = 0; iteration < nIterations; iteration++)
             {
@@ -27,6 +57,27 @@ namespace TeamsPricing
                 for (int j = 0; j < result.Length; j++)
                 {
                     mcFinalPrices[result[j].Name] += prices[j];
+<<<<<<< Updated upstream
+                }
+                if (iteration % (nIterations/10) == 0)
+                    Console.WriteLine(iteration/(nIterations/100)+ "%");
+                euro2016.Reset();
+            }
+
+            foreach (KeyValuePair<string, float> team in mcFinalPrices.ToList())
+                mcFinalPrices[team.Key] /= nIterations;
+
+            List<KeyValuePair<string,float>> outputFinal = mcFinalPrices.ToList();
+            outputFinal.Sort(
+                delegate (KeyValuePair<string, float> team1, KeyValuePair<string, float> team2)
+                {
+                    return team1.Value.CompareTo(team2.Value);
+                });
+            outputFinal.Reverse();
+            foreach (KeyValuePair<string, float> team in outputFinal)
+                Console.WriteLine("{0} = {1}$", team.Key, team.Value);
+                //Console.WriteLine(team.Value);
+=======
                 }
                 if (iteration % (nIterations / 10) == 0)
                 {
@@ -44,6 +95,7 @@ namespace TeamsPricing
             {
                 Console.WriteLine("{0} = {1}$", team.Key, team.Value / nIterations);
             }
+>>>>>>> Stashed changes
             Console.ReadLine();
         }
 
@@ -56,7 +108,7 @@ namespace TeamsPricing
             {
                 // ca te fait economiser un acces memoire !
                 var record = records[i];
-                result[i] = new Tuple<string, string>(record.Team1, record.Team2);
+                result[i] = new Tuple<string, string>(record.team1, record.team2);
             }
             return result;
         }
@@ -65,22 +117,15 @@ namespace TeamsPricing
         {
             var engine = new FileHelperEngine<Teams>();
             var records = engine.ReadFile(filePath);
-            // redondant ta declaration
-            var resultList = new Dictionary<string, List<TeamFootball>>();
+            Dictionary<string, List<TeamFootball>> resultList = new Dictionary<string, List<TeamFootball>>();
             foreach (Teams team in records)
             {
-                List<TeamFootball> groupTeams;
-                if (!resultList.TryGetValue(team.Group, out groupTeams))
-                {
-                    groupTeams = new List<TeamFootball>();
-                }
-                groupTeams.Add(new TeamFootball(team.Name, team.Points));
+                if (!resultList.ContainsKey(team.Group))
+                    resultList.Add(team.Group, new List<TeamFootball>());
+                resultList[team.Group].Add(new TeamFootball(team.Name, team.Points));
             }
-
-            // je comprends pas pq tu passes tout ca en array...
-            // je te laisse corriger !!!
-            var result = new Dictionary<string, TeamFootball[]>();
-            foreach (var res in resultList)
+            Dictionary<string, TeamFootball[]> result = new Dictionary<string, TeamFootball[]>();
+            foreach (KeyValuePair<string, List<TeamFootball>> res in resultList)
             {
                 result.Add(res.Key, res.Value.ToArray());
             }
@@ -91,41 +136,37 @@ namespace TeamsPricing
         {
             var engine = new FileHelperEngine<RulesTable>();
             var records = engine.ReadFile(filePath);
-
-            // c'est pas du detail, ca t'evite de resizer ton dico !!!
-            var result = records.ToDictionary(x => x.Key, x => new Dictionary<string, string> {
-                    { "1A", x.Team1 },
-                    { "1B", x.Team2 },
-                    { "1C", x.Team3 },
-                    { "1D", x.Team4 }
-                });
-
+            Dictionary<string, Dictionary<string, string>> result = new Dictionary<string, Dictionary<string, string>>();
+            foreach (RulesTable rules in records)
+            {
+                Dictionary<string, string> tmp = new Dictionary<string, string>();
+                tmp.Add("1A", rules.Team1);
+                tmp.Add("1B", rules.Team2);
+                tmp.Add("1C", rules.Team3);
+                tmp.Add("1D", rules.Team4);
+                result.Add(rules.Key, tmp);
+            }
             return result;
         }
 
         public static void ReworkTeamPoints(Dictionary<string, TeamFootball[]> groups, string method)
         {
             List<float> pointsList = new List<float>();
-            // je te laisse corriger ca avec du linq comme plus haut
-            foreach (KeyValuePair<string, TeamFootball[]> group in groups)
+            foreach (KeyValuePair<string,TeamFootball[]> group in groups)
             {
-                foreach (TeamFootball team in group.Value)
+                foreach(TeamFootball team in group.Value)
                 {
                     pointsList.Add(team.Points);
                 }
             }
             switch (method)
             {
-                // dirty dirty ton case sur des strings
-                // utilise une enum !
                 case "stupid":
-                    Tuple<double, double> meanVar = Statistics.MeanVariance(pointsList);
+                    Tuple<double,double> meanVar = Statistics.MeanVariance(pointsList);
                     foreach (KeyValuePair<string, TeamFootball[]> group in groups)
                     {
                         foreach (TeamFootball team in group.Value)
                         {
-                            // harmonise moi tout ca
-                            // soit tu utilises des doubles soit des float !
                             team.Points = (team.Points - (float)meanVar.Item1) / (float)meanVar.Item2;
                         }
                     }

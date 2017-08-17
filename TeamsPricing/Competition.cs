@@ -1,13 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace TeamsPricing
 {
     class Competition
     {
+        // tes noms !!!! _groups !
+        // j'ai pas resharper donc la flemme
         private Dictionary<string, TeamFootball[]> Groups;
         private int nTeams;
         private Tuple<TeamFootball,TeamFootball>[] MatchesKnockout;
@@ -15,9 +15,11 @@ namespace TeamsPricing
         private Dictionary<string, Dictionary<string, string>> SelectionRulesTable;
         private GoalsModel Goals;
 
+        // same met une enum pour methodtouse
         public Competition(Dictionary<string, TeamFootball[]> groups, Tuple<string, string>[] selectionRules, 
             Dictionary<string, Dictionary<string, string>> selectionRulesTable, string methodToUse="")
         {
+            // utilise Linq
             nTeams = 0;
             foreach (KeyValuePair<string, TeamFootball[]> group in groups)
             {
@@ -33,6 +35,7 @@ namespace TeamsPricing
 
         public TeamFootball[] PlayCompetition()
         {
+            // encore Linq
             TeamFootball[] finalRanking = new TeamFootball[nTeams];
             int k = 0;
             foreach (KeyValuePair<string,TeamFootball[]> group in Groups)
@@ -44,6 +47,7 @@ namespace TeamsPricing
                 }
             }
             //First we play all the groups games to rank teams in each group
+            // fait ton foreach sur Groups.Values ca te simplifiera la vie
             foreach (KeyValuePair<string, TeamFootball[]> group in Groups)
             {
                 for (int i = 0; i < group.Value.Length-1; i++)
@@ -63,10 +67,12 @@ namespace TeamsPricing
             populateMatches();
 
             // We now play the knockout phase
-            for (int i = 8; i >=1; i/=2)
+            // privilegie les > aux >=
+            for (int i = 8; i > 0; i/=2)
             {
                 for (int j = 0; j < i; j+=2)
                 {
+                    // refactor pour limiter les acces à tes listes MatchesKnockout
                     TeamFootball winnerOne = Goals.PlayMatch(MatchesKnockout[i-1 + j].Item1, MatchesKnockout[i-1 + j].Item2, false);
                     TeamFootball winnerTwo = Goals.PlayMatch(MatchesKnockout[i + j].Item1, MatchesKnockout[i + j].Item2, false);
                     if (i>1)
@@ -74,6 +80,7 @@ namespace TeamsPricing
 
                 }
             }
+            // use Linq !
             Array.Sort(finalRanking);
             Array.Reverse(finalRanking);
             return finalRanking;
@@ -106,7 +113,7 @@ namespace TeamsPricing
             i = 0;
             foreach (Tuple<string, string> match in SelectionRules)
             {
-                int rank1 = (int)Char.GetNumericValue(match.Item1[0]);
+                int rank1 = (int)char.GetNumericValue(match.Item1[0]);
                 string group1 = match.Item1[1].ToString();
                 int rank2;
                 string group2;
@@ -130,11 +137,14 @@ namespace TeamsPricing
 
         public void Reset()
         {
-            foreach (KeyValuePair<string, TeamFootball[]> group in Groups)
+            
+            foreach (var team in Groups.SelectMany(x => x.Value))
             {
-                foreach (TeamFootball team in group.Value)
                     team.Reset();
             }
+            // utilise une list et fait moi un clear
+            // la tu recrées completement un tableau et l'autre reste en memoire tant que le GC est pas passé
+            // ok pour 15 element mais ca peut vite devenir moche !
             MatchesKnockout = new Tuple<TeamFootball, TeamFootball>[15];
         }
 

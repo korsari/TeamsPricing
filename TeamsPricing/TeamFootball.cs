@@ -1,22 +1,24 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TeamsPricing
 {
     class TeamFootball : IComparable
     {
         public float Points { get; set; }
+
         public string Name { get; set; }
 
         public int Score { get; set; }
+
         private int _won;
+
         public int Won
         {
             get { return _won; }
-            set { _won = value;  Score += 3; }
+            set { _won = value;  
+                // what !!!! huge side effect !!!
+                // tu retires ca et tu fais un truc propre
+                Score += 3; }
         }
         public int Lost { get; set; }
         private int _drawn;
@@ -32,6 +34,8 @@ namespace TeamsPricing
             {
                 int prec = _goalFor;
                 _goalFor = value;
+                // je suis pas fan... 
+                // pq GoalDifference te retourne pas directement GoalFor - GoalAgainst ?
                 GoalDifference += value-prec;
             }
         }
@@ -52,6 +56,8 @@ namespace TeamsPricing
         {
             Points = points;
             Name = name;
+            // Best practice, une ligne par initialisation
+            // ca tevitera a te faire chier quand tu voudras changer qqch et c'est plus simple a trouver
             Score = Won = Lost = Drawn = GoalFor = GoalAgainst = GoalDifference = 0;
         }
 
@@ -62,6 +68,7 @@ namespace TeamsPricing
 
         public void Print()
         {
+            // Tu as une methode ToString overridable qui est faite pour ca !
             Console.WriteLine("Team {0} scored {1} points by winning {2} and losing {3} matches and {4} drawn.", Name, Score, Won, Lost, Drawn);
             Console.WriteLine("Details: Goals for= {0} Goals against={1} => Goals Difference={2}", GoalFor, GoalAgainst, GoalDifference);
             Console.ReadLine();
@@ -70,8 +77,9 @@ namespace TeamsPricing
         public int CompareTo(object obj)
         {
             if (obj == null)
+            {
                 return 1;
-
+            }
             TeamFootball opponent = obj as TeamFootball;
             if (opponent != null)
             {
@@ -90,5 +98,4 @@ namespace TeamsPricing
             }
         }
     }
-
 }

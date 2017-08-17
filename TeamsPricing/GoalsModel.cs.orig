@@ -98,10 +98,18 @@ namespace TeamsPricing
 
         private Tuple<int, int> Poisson(float points1, float points2, bool allowDrawn)
         {
+<<<<<<< Updated upstream
+            
+            return (0, 0);
+        }
+
+        private (int,int) QuickRandWeightedDrawn(float points1, float points2, bool allowDrawn)
+=======
             return new Tuple<int, int>(0, 0);
         }
 
-        private Tuple<int, int> QuickRandWeightedDrawn(float points1, float points2, bool allowDrawn)
+        private Tuple<int, int> QuickRand(float points1, float points2, bool allowDrawn)
+>>>>>>> Stashed changes
         {
             int points1Int = (int)(points1 * 100);
             int points2Int = (int)(points2 * 100);
@@ -116,6 +124,7 @@ namespace TeamsPricing
             }
             else
             {
+<<<<<<< Updated upstream
                 r = Rand.Next(points1Int + points2Int);
                 if (points1 < points2)
                 {
@@ -128,7 +137,14 @@ namespace TeamsPricing
                     goals2 = points2Int;
                 }
             }
-            return new Tuple<int, int>(goals1, goals2);
+            return (goals1, goals2);
+=======
+                team1.Lost++;
+                team2.Lost++;
+                return team2;
+            }*/
+            return new Tuple<int, int>(0, 0);
+>>>>>>> Stashed changes
         }
     }
 }
